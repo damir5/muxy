@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Agent Team Stage</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #111418;
+      --panel: #171b20;
+      --panel-2: #1d232a;
+      --fg: #e8edf2;
+      --muted: #94a0ad;
+      --border: #2c353f;
+      --accent: #66d9a3;
+      --warn: #ffca6a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font: 13px/1.45 -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(180deg, #0f1216, var(--bg));
+      color: var(--fg);
+    }
+    .shell { padding: 14px; }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+    button {
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--fg);
+      border-radius: 8px;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+    .card {
+      background: color-mix(in srgb, var(--panel) 88%, black);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+    .path {
+      color: var(--muted);
+      word-break: break-all;
+      margin-bottom: 10px;
+    }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: baseline;
+    }
+    .badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(102, 217, 163, 0.12);
+      color: var(--accent);
+      border: 1px solid rgba(102, 217, 163, 0.25);
+    }
+    .list {
+      display: grid;
+      gap: 10px;
+    }
+    .muted { color: var(--muted); }
+    .paths {
+      margin-top: 6px;
+      color: var(--warn);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="top">
+      <h1>Agent Team</h1>
+      <button id="refresh">Refresh</button>
+    </div>
+    <div id="app" class="muted">Waiting for agent-team state.</div>
+  </div>
+  <script>
+    const app = document.getElementById("app");
+    document.getElementById("refresh").addEventListener("click", () => {
+      window.webkit?.messageHandlers?.agentTeam?.postMessage({ action: "refresh" });
+    });
+
+    function escapeHTML(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+    }
+
+    window.__agentTeamRender = function (payload) {
+      const runs = payload.runs || [];
+      const reservations = payload.reservations || [];
+      const runsHTML = runs.map(run => `
+        <div class="card">
+          <div class="row">
+            <strong>${escapeHTML(run.team)}</strong>
+            <span class="badge">${escapeHTML(run.status)}</span>
+          </div>
+          <div class="muted">${escapeHTML(run.flow || "ad hoc")} · ${escapeHTML(run.updatedAt)}</div>
+          <div class="muted">${escapeHTML((run.workers || []).join(", ") || "no workers")}</div>
+        </div>
+      `).join("");
+
+      const reservationsHTML = reservations.map(lock => `
+        <div class="card">
+          <div class="row">
+            <strong>${escapeHTML(lock.worker)}</strong>
+            <span class="badge">lock</span>
+          </div>
+          <div class="paths">${escapeHTML((lock.paths || []).join("\n"))}</div>
+        </div>
+      `).join("");
+
+      app.innerHTML = `
+        <div class="path">${escapeHTML(payload.projectPath)}</div>
+        <div class="list">
+          ${runsHTML || '<div class="card muted">No active runs.</div>'}
+          ${reservationsHTML}
+        </div>
+      `;
+    };
+  </script>
+</body>
+</html>

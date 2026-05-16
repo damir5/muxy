@@ -85,6 +85,11 @@ struct MuxyApp: App {
                         delegate.server = server
                         return delegate
                     }
+                    AgentTeamDaemonService.shared.configure(
+                        appState: appState,
+                        projectStore: projectStore,
+                        worktreeStore: worktreeStore
+                    )
                     appState.onProjectsEmptied = { [projectStore, worktreeStore] projectIDs in
                         for id in projectIDs {
                             if let project = projectStore.projects.first(where: { $0.id == id }) {
